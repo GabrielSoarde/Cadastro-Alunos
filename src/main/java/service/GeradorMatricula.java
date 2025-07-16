@@ -31,4 +31,7 @@ public class GeradorMatricula {
         return soma % 10;
     }
 
+    // OBS: Este conjunto matriculasGeradas vive só em memória.
+    // Para persistir as matrículas e evitar duplicatas após reinício do app,
+    // seria ideal salvar e carregar esse conjunto em arquivo ou banco.
 }

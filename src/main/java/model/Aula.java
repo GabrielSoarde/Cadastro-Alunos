@@ -1,23 +1,67 @@
 package model;
 
-import java.time.LocalTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class Aula {
+import java.io.Serializable;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.util.Objects;
+
+public class Aula implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    private static int proximoId = 1;
 
     private int id;
-    private DiaDaSemana dia;
+    private DayOfWeek dia;
     private LocalTime horario;
 
+    @JsonIgnore
     private Aluno aluno;
     private Professor professor;
 
-    public enum DiaDaSemana{
-        SEGUNDA,
-        TERCA,
-        QUARTA,
-        QUINTA,
-        SEXTA,
-        SABADO
+    public Aula(DayOfWeek dia, LocalTime horario) {
+        if (dia == null) throw new IllegalArgumentException("Dia não pode ser nulo");
+        if (horario == null) throw new IllegalArgumentException("Horário não pode ser nulo");
+        this.dia = dia;
+        this.horario = horario;
+        this.id = proximoId++;
+    }
+
+    public Aula() {}
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id){
+        this.id = id;
+    }
+
+    public DayOfWeek getDia() {
+        return dia;
+    }
+
+    public void setDia(DayOfWeek dia) {
+        if (dia == null) throw new IllegalArgumentException("Dia não pode ser nulo");
+        this.dia = dia;
+    }
+
+    public LocalTime getHorario() {
+        return horario;
+    }
+
+    public void setHorario(LocalTime horario) {
+        if (horario == null) throw new IllegalArgumentException("Horário não pode ser nulo");
+        this.horario = horario;
+    }
+
+    public Aluno getAluno() {
+        return aluno;
+    }
+
+    public void setAluno(Aluno aluno) {
+        this.aluno = aluno;
     }
 
     public Professor getProfessor() {
@@ -28,19 +72,25 @@ public class Aula {
         this.professor = professor;
     }
 
-    public DiaDaSemana getDia() {
-        return dia;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Aula)) return false;
+        Aula aula = (Aula) o;
+        return id == aula.id && dia == aula.dia && Objects.equals(horario, aula.horario);
     }
 
-    public void setDia(DiaDaSemana dia) {
-        this.dia = dia;
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, dia, horario);
     }
 
-    public LocalTime getHorario() {
-        return horario;
-    }
-
-    public void setHorario(LocalTime horario) {
-        this.horario = horario;
+    @Override
+    public String toString() {
+        return "Aula{" +
+                "id=" + id +
+                ", dia=" + dia +
+                ", horario=" + horario +
+                '}';
     }
 }

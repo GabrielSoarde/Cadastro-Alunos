@@ -1,6 +1,17 @@
 package model;
 
-public class Aluno {
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Representa um aluno da escola de música.
+ */
+public class Aluno implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+    private static int proximoId = 1;
 
     private int id;
     private String nome;
@@ -12,11 +23,16 @@ public class Aluno {
     private String experienciaMusical;
 
     private Matricula matricula;
-    private Aula aula;
+    private List<Aula> aulas;
 
+    public Aluno() {
+        this.aulas = new ArrayList<>();
+        this.matricula = new Matricula();
+    }
 
-    public Aluno(int id, String nome, String curso, String telefone, String email, String cpf, String escolaridade, String experienciaMusical) {
-        this.id = id;
+    public Aluno(String nome, String curso, String telefone, String email,
+                 String cpf, String escolaridade, String experienciaMusical) {
+        this.id = proximoId++;
         this.nome = nome;
         this.curso = curso;
         this.telefone = telefone;
@@ -25,23 +41,10 @@ public class Aluno {
         this.escolaridade = escolaridade;
         this.experienciaMusical = experienciaMusical;
 
+        this.id = proximoId;
+
         this.matricula = new Matricula();
-    }
-
-    public Matricula getMatricula() {
-        return matricula;
-    }
-
-    public void setMatricula(Matricula matricula) {
-        this.matricula = matricula;
-    }
-
-    public Aula getAula() {
-        return aula;
-    }
-
-    public void setAula(Aula aula) {
-        this.aula = aula;
+        this.aulas = new ArrayList<>();
     }
 
     public int getId() {
@@ -106,5 +109,64 @@ public class Aluno {
 
     public void setExperienciaMusical(String experienciaMusical) {
         this.experienciaMusical = experienciaMusical;
+    }
+
+    public Matricula getMatricula() {
+        return matricula;
+    }
+
+    public void setMatricula(Matricula matricula) {
+        this.matricula = matricula;
+    }
+
+    public List<Aula> getAulas() {
+        return aulas;
+    }
+
+    public void setAulas(List<Aula> aulas) {
+        this.aulas = aulas;
+    }
+
+    public void addAula(Aula aula) {
+        if (this.aulas == null) {
+            this.aulas = new ArrayList<>();
+        }
+        this.aulas.add(aula);
+        aula.setAluno(this);
+    }
+
+    public void removerAula(Aula aula) {
+        if (aula == null) return;
+        this.aulas.remove(aula);
+        aula.setAluno(null);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Aluno)) return false;
+        Aluno aluno = (Aluno) o;
+        return id == aluno.id && Objects.equals(cpf, aluno.cpf);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, cpf);
+    }
+
+    @Override
+    public String toString() {
+        return "Aluno{" +
+                "id=" + id +
+                ", nome='" + nome + '\'' +
+                ", curso='" + curso + '\'' +
+                ", telefone='" + telefone + '\'' +
+                ", email='" + email + '\'' +
+                ", cpf='" + cpf + '\'' +
+                ", escolaridade='" + escolaridade + '\'' +
+                ", experienciaMusical='" + experienciaMusical + '\'' +
+                ", matricula=" + matricula +
+                ", aulas=" + aulas +
+                '}';
     }
 }
