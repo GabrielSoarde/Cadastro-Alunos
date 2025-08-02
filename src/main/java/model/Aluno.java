@@ -5,13 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * Representa um aluno da escola de música.
- */
 public class Aluno implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private static int proximoId = 1;
 
     private int id;
     private String nome;
@@ -21,6 +17,7 @@ public class Aluno implements Serializable {
     private String cpf;
     private String escolaridade;
     private String experienciaMusical;
+    private Boolean isAtivo;
 
     private Matricula matricula;
     private List<Aula> aulas;
@@ -31,8 +28,7 @@ public class Aluno implements Serializable {
     }
 
     public Aluno(String nome, String curso, String telefone, String email,
-                 String cpf, String escolaridade, String experienciaMusical) {
-        this.id = proximoId++;
+                 String cpf, String escolaridade, String experienciaMusical, Boolean isAtivo) {
         this.nome = nome;
         this.curso = curso;
         this.telefone = telefone;
@@ -40,11 +36,18 @@ public class Aluno implements Serializable {
         this.cpf = cpf;
         this.escolaridade = escolaridade;
         this.experienciaMusical = experienciaMusical;
-
-        this.id = proximoId;
+        this.isAtivo = isAtivo;
 
         this.matricula = new Matricula();
         this.aulas = new ArrayList<>();
+    }
+
+    public boolean isAtivo() {
+        return isAtivo != null && isAtivo;
+    }
+
+    public void setAtivo(boolean ativo) {
+        this.isAtivo = ativo;
     }
 
     public int getId() {
@@ -168,5 +171,26 @@ public class Aluno implements Serializable {
                 ", matricula=" + matricula +
                 ", aulas=" + aulas +
                 '}';
+    }
+
+    public String getDiaAula() {
+        if (aulas != null && !aulas.isEmpty()) {
+            return aulas.get(0).getDia().toString();
+        }
+        return "";
+    }
+
+    public String getHorarioAula() {
+        if (aulas != null && !aulas.isEmpty()) {
+            return aulas.get(0).getHorario().toString();
+        }
+        return "";
+    }
+
+    public String getNomeProfessor() {
+        if (aulas != null && !aulas.isEmpty() && aulas.get(0).getProfessor() != null) {
+            return aulas.get(0).getProfessor().getNomeProfessor();
+        }
+        return "";
     }
 }

@@ -1,101 +1,78 @@
 package service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import dao.AlunoDAO;
 import model.Aluno;
+import model.Aula;
+import model.Professor;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class AlunoService {
 
-    private List<Aluno> alunosAtivos;
-    private List<Aluno> alunosInativos;
-
-    private static final String PASTA_DADOS = "data/";
-    private static final String ARQUIVO_ATIVOS = PASTA_DADOS + "alunos_ativos.json";
-    private static final String ARQUIVO_INATIVOS = PASTA_DADOS + "alunos_inativos.json";
-
-    private static int proximoId = 1;
-
-    private final ObjectMapper mapper;
+    private final AlunoDAO alunoDAO;
 
     public AlunoService() {
-        this.mapper = new ObjectMapper();
-        this.mapper.registerModule(new JavaTimeModule());
-        this.mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-        this.alunosAtivos = carregarLista(ARQUIVO_ATIVOS);
-        this.alunosInativos = carregarLista(ARQUIVO_INATIVOS);
-        atualizarProximoId();
+        this.alunoDAO = new AlunoDAO();
     }
 
-    public void adicionarAluno(Aluno aluno) {
-        aluno.setId(proximoId++);
-        alunosAtivos.add(aluno);
-        salvarAlunos();
-    }
+    public void cadastrarAluno(Aluno aluno) {
+        if (aluno == null) throw new IllegalArgumentException("Aluno não pode ser nulo");
+        if (aluno.getNome() == null || aluno.getNome().isEmpty()) throw new IllegalArgumentException("Nome é obrigatório");
+        if (aluno.getCpf() == null || aluno.getCpf().isEmpty()) throw new IllegalArgumentException("CPF é obrigatório");
 
-    public void removerAluno(Aluno aluno) {
-        alunosAtivos.remove(aluno);
-        alunosInativos.add(aluno);
-        salvarAlunos();
-    }
+        ProfessorService professorService = new ProfessorService();
 
-    public List<Aluno> getAlunosAtivos() {
-        return alunosAtivos;
-    }
-
-    public List<Aluno> getAlunosInativos() {
-        return alunosInativos;
-    }
-
-    public void salvarAlunos() {
-        salvarLista(alunosAtivos, ARQUIVO_ATIVOS);
-        salvarLista(alunosInativos, ARQUIVO_INATIVOS);
-    }
-
-    private void salvarLista(List<Aluno> lista, String caminho) {
-        try {
-            File arquivo = new File(caminho);
-            File diretorio = arquivo.getParentFile();
-
-            if (diretorio != null && !diretorio.exists()) {
-                diretorio.mkdirs(); // Cria o diretório 'data/' se não existir
+        // Para cada aula, garante que o professor exista no banco e tenha ID correto
+        for (Aula aula : aluno.getAulas()) {
+            String nomeProf = aula.getProfessor() != null ? aula.getProfessor().getNomeProfessor() : null;
+            if (nomeProf != null && !nomeProf.isBlank()) {
+                Professor prof = professorService.buscarOuCriarPorNome(nomeProf);
+                aula.setProfessor(prof);
+                aula.setAluno(aluno);
             }
-
-            mapper.writerWithDefaultPrettyPrinter().writeValue(arquivo, lista);
-        } catch (IOException e) {
-            System.err.println("Erro ao salvar JSON: " + caminho);
-            e.printStackTrace();
         }
+
+        alunoDAO.insert(aluno);
     }
 
-    private List<Aluno> carregarLista(String caminho) {
-        File arquivo = new File(caminho);
-        if (!arquivo.exists()) return new ArrayList<>();
-
-        try {
-            return mapper.readValue(arquivo, new TypeReference<List<Aluno>>() {});
-        } catch (IOException e) {
-            System.err.println("Erro ao carregar JSON: " + caminho);
-            e.printStackTrace();
-            return new ArrayList<>();
-        }
+    public List<Aluno> listarAlunosAtivos() {
+        return alunoDAO.findAlunosAtivos();
     }
 
-    private void atualizarProximoId() {
-        int maiorId = 0;
-        for (Aluno a : alunosAtivos) {
-            if (a.getId() > maiorId) maiorId = a.getId();
-        }
-        for (Aluno a : alunosInativos) {
-            if (a.getId() > maiorId) maiorId = a.getId();
-        }
-        proximoId = maiorId + 1;
+    public List<Aluno> listarTodosAlunos() {
+        return alunoDAO.findAll();
     }
+
+    public Aluno buscarPorId(int id) {
+        return alunoDAO.findById(id);
+    }
+
+    public void atualizarAluno(Aluno aluno) {
+        if (aluno == null || aluno.getId() <= 0) throw new IllegalArgumentException("Aluno inválido para atualização");
+        alunoDAO.update(aluno);
+    }
+
+    public void removerAluno(int id) {
+        if (id <= 0) throw new IllegalArgumentException("ID inválido para remoção");
+        alunoDAO.delete(id);
+    }
+
+    public List<Aluno> listarAlunosPorProfessor(String nomeProfessor) {
+        List<Aluno> todosAlunos = alunoDAO.findAll(); // já carrega os alunos
+        List<Aluno> filtrados = new ArrayList<>();
+
+        for (Aluno aluno : todosAlunos) {
+            for (Aula aula : aluno.getAulas()) {
+                if (aula.getProfessor() != null &&
+                        aula.getProfessor().getNomeProfessor().equalsIgnoreCase(nomeProfessor)) {
+                    filtrados.add(aluno);
+                    break;
+                }
+            }
+        }
+
+        return filtrados;
+    }
+
 }

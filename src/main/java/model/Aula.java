@@ -18,17 +18,17 @@ public class Aula implements Serializable {
 
     @JsonIgnore
     private Aluno aluno;
+
     private Professor professor;
 
     public Aula(DayOfWeek dia, LocalTime horario) {
-        if (dia == null) throw new IllegalArgumentException("Dia não pode ser nulo");
-        if (horario == null) throw new IllegalArgumentException("Horário não pode ser nulo");
-        this.dia = dia;
-        this.horario = horario;
+        setDia(dia);
+        setHorario(horario);
         this.id = proximoId++;
     }
 
-    public Aula() {}
+    public Aula() {
+    }
 
     public int getId() {
         return id;
@@ -77,20 +77,16 @@ public class Aula implements Serializable {
         if (this == o) return true;
         if (!(o instanceof Aula)) return false;
         Aula aula = (Aula) o;
-        return id == aula.id && dia == aula.dia && Objects.equals(horario, aula.horario);
+        return id == aula.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, dia, horario);
+        return Objects.hash(id);
     }
 
     @Override
     public String toString() {
-        return "Aula{" +
-                "id=" + id +
-                ", dia=" + dia +
-                ", horario=" + horario +
-                '}';
+        return dia + " às " + horario;
     }
 }

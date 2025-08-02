@@ -6,19 +6,17 @@ import java.util.Objects;
 
 public class Professor implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static int proximoId = 1;
 
     private int id;
     private String nomeProfessor;
     private List<Aula> aulas;
 
-    public Professor(int id, String nomeProfessor) {
-        this.id = proximoId;
-        this.nomeProfessor = nomeProfessor;
+    public Professor(String nomeProfessor) {
+        setNomeProfessor(nomeProfessor);
     }
 
     public Professor() {
-        this.id = proximoId;
+        // Construtor vazio necessário para ORM ou deserialização
     }
 
     public int getId() {

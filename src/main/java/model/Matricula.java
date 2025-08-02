@@ -5,7 +5,9 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 public class Matricula implements Serializable {
+
     private static final long serialVersionUID = 1L;
+
     private String numeroMatricula;
     private LocalDate dataMatricula;
 
@@ -37,9 +39,6 @@ public class Matricula implements Serializable {
 
     @Override
     public String toString() {
-        return "Matricula{" +
-                "numeroMatricula='" + numeroMatricula + '\'' +
-                ", dataMatricula=" + dataMatricula +
-                '}';
+        return numeroMatricula + " (" + dataMatricula + ")";
     }
 }

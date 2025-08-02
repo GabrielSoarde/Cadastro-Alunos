@@ -1,7 +1,9 @@
 package ui.dialog;
 
+
 import ui.component.PainelBotoes;
 import ui.component.PainelTabelaAlunos;
+
 
 import javax.swing.*;
 import java.awt.*;

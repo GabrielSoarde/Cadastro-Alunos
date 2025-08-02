@@ -2,96 +2,81 @@ package ui.component;
 
 import model.Aluno;
 import model.Aula;
+import service.AlunoService;
 import service.GeradorExcel;
-import ui.JanelaAdicionarAluno;
+
+import ui.component.PainelTabelaAlunos;
+import ui.dialog.JanelaAdicionarAluno;
 import ui.dialog.JanelaEditarAluno;
 import ui.dialog.JanelaSelecionarProfessor;
-//import util.GeradorExcel;
+import ui.dialog.JanelaListarAlunos;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class PainelBotoes extends JPanel {
-
-    private java.time.DayOfWeek converterDia(String dia) {
-        switch(dia.toUpperCase()) {
-            case "SEGUNDA": return java.time.DayOfWeek.MONDAY;
-            case "TERCA": case "TERÇA": return java.time.DayOfWeek.TUESDAY;
-            case "QUARTA": return java.time.DayOfWeek.WEDNESDAY;
-            case "QUINTA": return java.time.DayOfWeek.THURSDAY;
-            case "SEXTA": return java.time.DayOfWeek.FRIDAY;
-            case "SABADO": case "SÁBADO": return java.time.DayOfWeek.SATURDAY;
-            case "DOMINGO": return java.time.DayOfWeek.SUNDAY;
-            default: throw new IllegalArgumentException("Dia inválido: " + dia);
-        }
-    }
 
     public PainelBotoes(PainelTabelaAlunos painelTabela) {
         setLayout(new FlowLayout());
 
         JButton btnAdicionar = new JButton("Adicionar Aluno");
         JButton btnRemover = new JButton("Remover Aluno");
+        JButton btnEditar = new JButton("Editar Aluno");
         JButton btnExportarAtivos = new JButton("Exportar Ativos");
-        JButton btnExportarInativos = new JButton("Exportar Inativos");
+        JButton btnRelatorioPorProfessor = new JButton("Relatório por Professor");
+        JButton btnListarAlunos = new JButton("Listar Alunos");
 
         add(btnAdicionar);
         add(btnRemover);
+        add(btnEditar);
         add(btnExportarAtivos);
-        add(btnExportarInativos);
+        add(btnRelatorioPorProfessor);
+        add(btnListarAlunos);
 
+        AlunoService alunoService = painelTabela.getAlunoService();
+
+        // Adicionar Aluno
         btnAdicionar.addActionListener(e -> {
             JanelaAdicionarAluno janela = new JanelaAdicionarAluno((Frame) SwingUtilities.getWindowAncestor(this));
             janela.setVisible(true);
             if (janela.foiSalvo()) {
                 Aluno aluno = janela.getAluno();
-                painelTabela.getAlunoService().adicionarAluno(aluno);
+                alunoService.cadastrarAluno(aluno);
 
-                Aula primeiraAula = aluno.getAulas().get(0);
-
-                painelTabela.getModelo().addRow(new Object[]{
-                        aluno.getId(),
-                        aluno.getNome(),
-                        aluno.getCurso(),
-                        aluno.getTelefone(),
-                        primeiraAula.getDia(),
-                        primeiraAula.getHorario(),
-                        primeiraAula.getProfessor().getNomeProfessor()
-                });
-
-                painelTabela.getAlunoService().salvarAlunos();
+                painelTabela.carregarDadosDoBanco();
             }
         });
 
-
-        JButton btnEditar = new JButton("Editar Aluno");
-        add(btnEditar);
-
+        // Editar Aluno
         btnEditar.addActionListener(e -> {
             int row = painelTabela.getTabela().getSelectedRow();
             if (row >= 0) {
                 int id = (int) painelTabela.getModelo().getValueAt(row, 0);
-                Aluno aluno = painelTabela.getAlunoService().getAlunosAtivos().stream()
-                        .filter(a -> a.getId() == id)
-                        .findFirst().orElse(null);
+                Aluno aluno = alunoService.buscarPorId(id);
 
                 if (aluno != null) {
                     JanelaEditarAluno janela = new JanelaEditarAluno((JFrame) SwingUtilities.getWindowAncestor(this), aluno);
                     janela.setVisible(true);
 
                     if (janela.foiSalvo()) {
+                        alunoService.atualizarAluno(aluno);
 
                         painelTabela.getModelo().setValueAt(aluno.getNome(), row, 1);
                         painelTabela.getModelo().setValueAt(aluno.getCurso(), row, 2);
                         painelTabela.getModelo().setValueAt(aluno.getTelefone(), row, 3);
-                        painelTabela.getAlunoService().salvarAlunos();
 
                         if (!aluno.getAulas().isEmpty()) {
-                            painelTabela.getModelo().setValueAt(
-                                    aluno.getAulas().get(0).getProfessor().getNomeProfessor(), row, 6
-                            );
+                            var aula = aluno.getAulas().get(0);
+                            painelTabela.getModelo().setValueAt(aula.getDia(), row, 4);
+                            painelTabela.getModelo().setValueAt(aula.getHorario(), row, 5);
+                            painelTabela.getModelo().setValueAt(aula.getProfessor().getNomeProfessor(), row, 6);
+                        } else {
+                            painelTabela.getModelo().setValueAt("", row, 4);
+                            painelTabela.getModelo().setValueAt("", row, 5);
+                            painelTabela.getModelo().setValueAt("", row, 6);
                         }
                     }
                 }
@@ -100,64 +85,57 @@ public class PainelBotoes extends JPanel {
             }
         });
 
-
-
-        btnRemover.addActionListener((ActionEvent e) -> {
+        // Remover Aluno
+        btnRemover.addActionListener(e -> {
             int row = painelTabela.getTabela().getSelectedRow();
             if (row >= 0) {
                 int id = (int) painelTabela.getModelo().getValueAt(row, 0);
-                Aluno aluno = painelTabela.getAlunoService().getAlunosAtivos().stream()
-                        .filter(a -> a.getId() == id)
-                        .findFirst().orElse(null);
-                if (aluno != null) {
-                    painelTabela.getAlunoService().removerAluno(aluno);
-                    painelTabela.getModelo().removeRow(row);
-                }
-                painelTabela.getAlunoService().salvarAlunos();
+                alunoService.removerAluno(id);
+                painelTabela.carregarDadosDoBanco();
+            } else {
+                JOptionPane.showMessageDialog(null, "Selecione um aluno para remover.");
             }
         });
 
         btnExportarAtivos.addActionListener(e -> {
             try {
-                String userHome = System.getProperty("user.home");
-                File desktop = new File(userHome + File.separator + "Desktop");
-                if (!desktop.exists()) {
-                    desktop = new File(userHome + File.separator + "Área de Trabalho"); // fallback em PT
-                }
+                String caminho = gerarCaminho("alunos_ativos.xlsx");
 
-                String caminho = desktop.getAbsolutePath() + File.separator + "alunos_ativos.xlsx";
-                GeradorExcel.exportar(painelTabela.getAlunoService().getAlunosAtivos(), caminho);
+                List<Aluno> todosAlunos = alunoService.listarTodosAlunos();
+                List<Aluno> alunosAtivos = todosAlunos.stream()
+                        .filter(Aluno::isAtivo) // ou .filter(a -> a.getAtivo())
+                        .toList();
+
+                GeradorExcel.exportar(alunosAtivos, caminho);
                 JOptionPane.showMessageDialog(null, "Exportado com sucesso na Área de Trabalho!");
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(null, "Erro ao exportar!");
             }
         });
 
-        btnExportarInativos.addActionListener(e -> {
-            try {
-                String userHome = System.getProperty("user.home");
-                File desktop = new File(userHome + File.separator + "Desktop");
-                if (!desktop.exists()) {
-                    desktop = new File(userHome + File.separator + "Área de Trabalho"); // fallback em PT
-                }
-
-                String caminho = desktop.getAbsolutePath() + File.separator + "alunos_inativos.xlsx";
-                GeradorExcel.exportar(painelTabela.getAlunoService().getAlunosAtivos(), caminho);
-                JOptionPane.showMessageDialog(null, "Exportado com sucesso na Área de Trabalho!");
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(null, "Erro ao exportar!");
-            }
-        });
-
-        JButton btnRelatorioPorProfessor = new JButton("Relatório por Professor");
-        add(btnRelatorioPorProfessor);
-
+        // Relatório por Professor
         btnRelatorioPorProfessor.addActionListener(e -> {
+            List<Aluno> alunos = alunoService.listarTodosAlunos();
             JanelaSelecionarProfessor janela = new JanelaSelecionarProfessor(
                     (JFrame) SwingUtilities.getWindowAncestor(this),
-                    painelTabela.getAlunoService().getAlunosAtivos()
+                    alunos
             );
             janela.setVisible(true);
         });
+
+        // Listar Alunos - NOVO botão
+        btnListarAlunos.addActionListener(e -> {
+            JanelaListarAlunos janelaListar = new JanelaListarAlunos();
+            janelaListar.setVisible(true);
+        });
+    }
+
+    private String gerarCaminho(String nomeArquivo) {
+        String userHome = System.getProperty("user.home");
+        File desktop = new File(userHome + File.separator + "Desktop");
+        if (!desktop.exists()) {
+            desktop = new File(userHome + File.separator + "Área de Trabalho");
+        }
+        return desktop.getAbsolutePath() + File.separator + nomeArquivo;
     }
 }
